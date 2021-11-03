@@ -8,35 +8,31 @@ typedef onChangedTextCallback = void Function(String value);
 
 class NoteScreenTemplate extends StatelessWidget {
   final Row toolbar;
-  final TextEditingController titleController;
-  final TextEditingController descriptionController;
+  final String titleText;
+  final String descriptionText;
+  final onChangedTextCallback onChangedTitleText;
+  final onChangedTextCallback onChangedDescriptionText;
   final bool editable;
   final Color selectedColor;
   final onChangedColorCallback callback;
 
   NoteScreenTemplate({
-    required this.titleController,
-    required this.descriptionController,
+    required this.titleText,
+    required this.descriptionText,
+    required this.onChangedTitleText,
+    required this.onChangedDescriptionText,
     required this.toolbar,
     this.editable = true,
     required this.selectedColor,
     required this.callback,
   });
 
-  void pickColor(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        insetPadding: EdgeInsets.symmetric(vertical: 230, horizontal: 50),
-        title: const Text("Pick Note Color"),
-        content:
-            NoteColorPicker(selectedColor: selectedColor, callback: callback),
-      ),
-    );
-  }
-
+  //IMPORTANT: the below build method will be called every time the s/w keyboard comes and goes on the screen.
+  //Therefore the stateful widget 'SelectedColorWidget' which is a child widget of this stateless widget is created
+  // in such a way to tackle this behaviour.
   @override
   Widget build(BuildContext context) {
+    print("NOTESCREEN TEMPLATE");
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -49,9 +45,8 @@ class NoteScreenTemplate extends StatelessWidget {
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: titleController,
                       enabled: editable,
-                      // onChanged: onChangedTitleText,
+                      onChanged: onChangedTitleText,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                       decoration: const InputDecoration(
@@ -73,20 +68,8 @@ class NoteScreenTemplate extends StatelessWidget {
                     ),
                   ),
                   editable
-                      ? InkWell(
-                          onTap: () {
-                            pickColor(context);
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.all(5),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              color: selectedColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        )
+                      ? SelectedColorWidget(
+                          selectedColor: selectedColor, callback: callback)
                       : const SizedBox(
                           height: 0,
                           width: 0,
@@ -107,9 +90,8 @@ class NoteScreenTemplate extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: SingleChildScrollView(
                   child: TextField(
-                    controller: descriptionController,
                     enabled: editable,
-                    // onChanged: onChangedDescriptionText,
+                    onChanged: onChangedDescriptionText,
                     style: const TextStyle(color: Colors.white),
                     keyboardType: TextInputType
                         .multiline, //maxlines = true is needed for this to work
@@ -128,6 +110,76 @@ class NoteScreenTemplate extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class SelectedColorWidget extends StatefulWidget {
+  final Color selectedColor;
+  final onChangedColorCallback callback;
+  SelectedColorWidget({required this.selectedColor, required this.callback}) {
+    print('SELECTED COLOR WIDGET CONSTRUCTOR ');
+  }
+
+  @override
+  _SelectedColorWidgetState createState() {
+    print("SELECTED COLOR WIDGET CREATE STATE");
+    return _SelectedColorWidgetState();
+  }
+}
+
+class _SelectedColorWidgetState extends State<SelectedColorWidget> {
+  late Color selectedColorPresent;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedColorPresent = widget.selectedColor;
+    print("SELECTED COLOR WIDGET INIT");
+  }
+
+  @override
+  void didUpdateWidget(covariant SelectedColorWidget oldWidget) {
+    print("SELECTED COLOR WIDGET didUpdateWidget");
+    super.didUpdateWidget(oldWidget);
+    //No need to call setState() as the build method is called after this method is finished.
+    // selectedColorPresent = widget.selectedColor;
+  }
+
+  void pickColor(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        insetPadding: EdgeInsets.symmetric(vertical: 230, horizontal: 50),
+        title: const Text("Pick Note Color"),
+        content: NoteColorPicker(
+            selectedColor: selectedColorPresent,
+            callback: (Color value) {
+              setState(() {
+                selectedColorPresent = value;
+              });
+              widget.callback(value);
+            }),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print("SELECTED COLOR WIDGET BUILD");
+    return InkWell(
+      onTap: () {
+        pickColor(context);
+      },
+      child: Container(
+        margin: const EdgeInsets.all(5),
+        height: 40,
+        width: 40,
+        decoration: BoxDecoration(
+          color: selectedColorPresent,
+          shape: BoxShape.circle,
         ),
       ),
     );

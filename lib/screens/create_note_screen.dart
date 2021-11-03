@@ -8,7 +8,7 @@ import 'package:notes_app_provider/utils/constants.dart';
 import 'package:notes_app_provider/utils/widget_functions.dart';
 import 'package:notes_app_provider/database/notes_database.dart';
 
-class CreateNoteScreen extends StatefulWidget {
+class CreateNoteScreen extends StatelessWidget {
   static const String id = "CreateNoteScreen";
 
   //If note id it passed then it's an update operation instead of create.
@@ -17,42 +17,32 @@ class CreateNoteScreen extends StatefulWidget {
   final String description;
   final int colorIndex;
 
-  const CreateNoteScreen(
+  CreateNoteScreen(
       {this.title = '',
       this.description = '',
       this.noteId,
-      this.colorIndex = 0});
-
-  @override
-  State<CreateNoteScreen> createState() => _CreateNoteScreenState();
-}
-
-class _CreateNoteScreenState extends State<CreateNoteScreen> {
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  late int selectedColor; //stores the index of the color from color list.
-
-  @override
-  void initState() {
-    super.initState();
-
-    titleController.text = widget.title;
-    descriptionController.text = widget.description;
-    selectedColor = widget.colorIndex;
-    print(selectedColor);
-  }
+      this.colorIndex = 0}) {}
 
   @override
   Widget build(BuildContext context) {
+    String titleText = '';
+    String descriptionText = '';
+    int selectedColor =
+        colorIndex; //stores the index of the color from color list
+
     print("CREATE NOTE SCREEN");
     return NoteScreenTemplate(
-      titleController: titleController,
-      descriptionController: descriptionController,
+      titleText: titleText,
+      descriptionText: descriptionText,
+      onChangedTitleText: (String value) {
+        titleText = value;
+      },
+      onChangedDescriptionText: (String value) {
+        descriptionText = value;
+      },
       selectedColor: noteColors[selectedColor],
       callback: (Color value) {
-        setState(() {
-          selectedColor = noteColors.indexOf(value);
-        });
+        selectedColor = noteColors.indexOf(value);
         Navigator.pop(context);
       },
       toolbar: Row(
@@ -67,8 +57,8 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
           InkWell(
             child: CapsuleTextBorder(text: "Save"),
             onTap: () async {
-              String title = titleController.text;
-              String description = descriptionController.text;
+              String title = titleText;
+              String description = descriptionText;
               //If the left most condition is true, then the next condition won't be checked ...therefore it won't throw null exception.
               if (title.trim().isEmpty) {
                 showErrorSnackBar(context, "Title can't be empty");
@@ -76,7 +66,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 //If the string just container white spaces then replace it with an empty string to save storage.
                 description = description.trim().isEmpty ? '' : description;
 
-                if (widget.noteId == null) {
+                if (noteId == null) {
                   Note note = await NotesDatabase.instance.insertNote(
                     Note(
                       title: title,
@@ -90,7 +80,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
                 } else {
                   int result = await NotesDatabase.instance.update(
                     Note(
-                      id: widget.noteId!,
+                      id: noteId!,
                       title: title,
                       description: description,
                       colorIndex: selectedColor,
