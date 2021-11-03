@@ -10,6 +10,7 @@ import 'package:notes_app_provider/models/note.dart';
 import 'package:notes_app_provider/provider/notes_data.dart';
 import 'package:notes_app_provider/utils/constants.dart';
 import 'package:notes_app_provider/utils/widget_functions.dart';
+import 'package:provider/provider.dart';
 import 'package:provider/src/provider.dart';
 
 import 'create_note_screen.dart';
@@ -24,7 +25,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // print("HOME SCREEN");
+    print("HOME SCREEN");
     return Scaffold(
       body: SafeArea(
         child: Container(
@@ -54,69 +55,19 @@ class HomeScreen extends StatelessWidget {
                                 .setSearchedNotesToNotes()
                             : null;
                       },
-                      child: RoundIconBorder(
-                          icon: context.watch<NotesData>().isSearching
-                              ? Icons.search_off
-                              : Icons.search),
+                      child: Consumer<NotesData>(
+                          builder: (context, value, child) => RoundIconBorder(
+                              icon: value.isSearching
+                                  ? Icons.search_off
+                                  : Icons.search)),
                     ),
                   ],
                 ),
               ),
               getVerticalSpace(10),
-              context.watch<NotesData>().isSearching
-                  ? SearchBox(
-                      callback: (String searchText) {
-                        print(searchText);
-                        // print(notes);
-                        context.read<NotesData>().searchForNotes(searchText);
-                      },
-                    )
-                  : const SizedBox(height: 0, width: 0),
-              Expanded(
-                child: context.watch<NotesData>().isNotesEmpty()
-                    ? NotesEmptyMessage()
-                    : Stack(
-                        children: [
-                          NotesStaggeredGridView(
-                            notesList: context.watch<NotesData>().searchedNotes,
-                            onTapNoteItem: (int itemIndex) async {
-                              Note selectedNote = context
-                                  .read<NotesData>()
-                                  .searchedNotes[itemIndex];
-
-                              DbNoteAction? result = await Navigator.pushNamed(
-                                      context, ViewNoteScreen.id,
-                                      arguments: ViewNoteScreenArguments(
-                                          note: context
-                                              .read<NotesData>()
-                                              .searchedNotes[itemIndex]))
-                                  as DbNoteAction?;
-
-                              if (result == DbNoteAction.delete) {
-                                context.read<NotesData>().getNotesFromDB();
-                                showSnackBarWithAction(
-                                  context: context,
-                                  message: "You deleted a note!",
-                                  onPressed: () async {
-                                    // print("Deleted  : ${selectedNote.id}");
-                                    await NotesDatabase.instance
-                                        .insertNote(selectedNote);
-                                    context.read<NotesData>().getNotesFromDB();
-                                  },
-                                );
-                              } else if (result == DbNoteAction.update) {
-                                context.read<NotesData>().getNotesFromDB();
-                              }
-                            },
-                          ),
-                          context.read<NotesData>().isLoading
-                              ? CustomProgressIndicator(
-                                  textMsg: "Loading Notes ...",
-                                )
-                              : const SizedBox(
-                                  height: 0, width: 0), //Dummy widget.
-                        ],
-                      ),
+              const SearchBoxWidget(),
+              const Expanded(
+                child: NotesStaggeredGridViewWidget(),
               ),
             ],
           ),
@@ -140,5 +91,74 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+//Extracting widgets that depend on the provider data to prevent the entire home screen widget to be build
+// every time when there's a change in data notified.
+class SearchBoxWidget extends StatelessWidget {
+  const SearchBoxWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // print("SEARCH BOX PROVIDER");
+    return context.watch<NotesData>().isSearching
+        ? SearchBox(
+            callback: (String searchText) {
+              print(searchText);
+              // print(notes);
+              context.read<NotesData>().searchForNotes(searchText);
+            },
+          )
+        : const SizedBox(height: 0, width: 0);
+  }
+}
+
+class NotesStaggeredGridViewWidget extends StatelessWidget {
+  const NotesStaggeredGridViewWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return context.watch<NotesData>().isNotesEmpty()
+        ? NotesEmptyMessage()
+        : Stack(
+            children: [
+              NotesStaggeredGridView(
+                notesList: context.watch<NotesData>().searchedNotes,
+                onTapNoteItem: (int itemIndex) async {
+                  Note selectedNote =
+                      context.read<NotesData>().searchedNotes[itemIndex];
+
+                  DbNoteAction? result = await Navigator.pushNamed(
+                      context, ViewNoteScreen.id,
+                      arguments: ViewNoteScreenArguments(
+                          note: context
+                              .read<NotesData>()
+                              .searchedNotes[itemIndex])) as DbNoteAction?;
+
+                  if (result == DbNoteAction.delete) {
+                    context.read<NotesData>().getNotesFromDB();
+                    showSnackBarWithAction(
+                      context: context,
+                      message: "You deleted a note!",
+                      onPressed: () async {
+                        // print("Deleted  : ${selectedNote.id}");
+                        await NotesDatabase.instance.insertNote(selectedNote);
+                        //Reload the notes.
+                        context.read<NotesData>().getNotesFromDB();
+                      },
+                    );
+                  } else if (result == DbNoteAction.update) {
+                    context.read<NotesData>().getNotesFromDB();
+                  }
+                },
+              ),
+              context.read<NotesData>().isLoading
+                  ? CustomProgressIndicator(
+                      textMsg: "Loading Notes ...",
+                    )
+                  : const SizedBox(height: 0, width: 0), //Dummy widget.
+            ],
+          );
   }
 }

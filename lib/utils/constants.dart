@@ -23,5 +23,5 @@ List<Color> noteColors = const [
   Color(0xff18ffff),
   Color(0xff5c6bc0),
   Color(0xff9575cd),
-  Color(0xffd500f9),
+  Color(0xf0d500f9),
 ];

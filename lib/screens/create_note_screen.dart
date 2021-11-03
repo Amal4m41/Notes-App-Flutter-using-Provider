@@ -44,6 +44,7 @@ class _CreateNoteScreenState extends State<CreateNoteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("CREATE NOTE SCREEN");
     return NoteScreenTemplate(
       titleController: titleController,
       descriptionController: descriptionController,
