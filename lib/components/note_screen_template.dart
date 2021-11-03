@@ -8,19 +8,15 @@ typedef onChangedTextCallback = void Function(String value);
 
 class NoteScreenTemplate extends StatelessWidget {
   final Row toolbar;
-  final String titleText;
-  final String descriptionText;
-  final onChangedTextCallback onChangedTitleText;
-  final onChangedTextCallback onChangedDescriptionText;
+  final TextEditingController titleController;
+  final TextEditingController descriptionController;
   final bool editable;
   final Color selectedColor;
   final onChangedColorCallback callback;
 
   NoteScreenTemplate({
-    required this.titleText,
-    required this.descriptionText,
-    required this.onChangedTitleText,
-    required this.onChangedDescriptionText,
+    required this.titleController,
+    required this.descriptionController,
     required this.toolbar,
     this.editable = true,
     required this.selectedColor,
@@ -30,6 +26,8 @@ class NoteScreenTemplate extends StatelessWidget {
   //IMPORTANT: the below build method will be called every time the s/w keyboard comes and goes on the screen.
   //Therefore the stateful widget 'SelectedColorWidget' which is a child widget of this stateless widget is created
   // in such a way to tackle this behaviour.
+  //REASON : Querying the current media using MediaQuery. of will cause your widget to rebuild automatically whenever
+  // the MediaQueryData changes (e.g., if the user rotates their device).
   @override
   Widget build(BuildContext context) {
     print("NOTESCREEN TEMPLATE");
@@ -45,8 +43,8 @@ class NoteScreenTemplate extends StatelessWidget {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: titleController,
                       enabled: editable,
-                      onChanged: onChangedTitleText,
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                       decoration: const InputDecoration(
@@ -90,8 +88,8 @@ class NoteScreenTemplate extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: SingleChildScrollView(
                   child: TextField(
+                    controller: descriptionController,
                     enabled: editable,
-                    onChanged: onChangedDescriptionText,
                     style: const TextStyle(color: Colors.white),
                     keyboardType: TextInputType
                         .multiline, //maxlines = true is needed for this to work

@@ -25,21 +25,17 @@ class CreateNoteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String titleText = '';
-    String descriptionText = '';
+    TextEditingController titleController = TextEditingController();
+    TextEditingController descriptionController = TextEditingController();
+    titleController.text = title;
+    descriptionController.text = description;
     int selectedColor =
         colorIndex; //stores the index of the color from color list
 
     print("CREATE NOTE SCREEN");
     return NoteScreenTemplate(
-      titleText: titleText,
-      descriptionText: descriptionText,
-      onChangedTitleText: (String value) {
-        titleText = value;
-      },
-      onChangedDescriptionText: (String value) {
-        descriptionText = value;
-      },
+      titleController: titleController,
+      descriptionController: descriptionController,
       selectedColor: noteColors[selectedColor],
       callback: (Color value) {
         selectedColor = noteColors.indexOf(value);
@@ -57,8 +53,8 @@ class CreateNoteScreen extends StatelessWidget {
           InkWell(
             child: CapsuleTextBorder(text: "Save"),
             onTap: () async {
-              String title = titleText;
-              String description = descriptionText;
+              String title = titleController.text;
+              String description = descriptionController.text;
               //If the left most condition is true, then the next condition won't be checked ...therefore it won't throw null exception.
               if (title.trim().isEmpty) {
                 showErrorSnackBar(context, "Title can't be empty");
